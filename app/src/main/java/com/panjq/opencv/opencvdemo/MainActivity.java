@@ -2,10 +2,14 @@ package com.panjq.opencv.opencvdemo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,7 +25,11 @@ import com.panjq.opencv.alg.ImagePro;
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
+    //调用系统相册-选择图片
+    private static final int IMAGE = 1;
     private static final String    TAG = "MainActivity";
+    private static  boolean bSHOW_SRCIMAGE  = true;
+
     static{
         Log.i(TAG, "opencv_java3 loading...");
         System.loadLibrary("opencv_java3");
@@ -32,12 +40,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ImageView imageview;
-    private Bitmap bmp, bitmap;
+    private Bitmap src_bitmap, dest_bitmap;
+    private Button open_albumsBt, process_imageBt,contrast_imageBt;
 
-    // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
+
     static {
         File appDir = new File(Environment.getExternalStorageDirectory(), "OpencvDemo");
         if (!appDir.exists()) {
@@ -51,14 +57,30 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         verifyStoragePermissions(MainActivity.this);
-        TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+        TextView tv = (TextView) findViewById(R.id.tv1);
+        tv.setText("opencv-demo");
+
+
         imageview = (ImageView) findViewById(R.id.image_view);
-        bmp = BitmapFactory.decodeResource(getResources(), R.drawable.girl);
-        imageview.setImageBitmap(bmp);
-        TextView tv2 = (TextView) findViewById(R.id.tv2);
-        Button buttonLoadImage = (Button) findViewById(R.id.buttonLoadPicture);
-        buttonLoadImage.setOnClickListener(new View.OnClickListener() {
+        src_bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.girl);
+        imageview.setImageBitmap(src_bitmap);
+
+        //打开相册
+        open_albumsBt = (Button) findViewById(R.id.open_albums);
+        open_albumsBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //调用相册
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, IMAGE);
+
+            }
+        });
+
+        //图像处理
+        process_imageBt = (Button) findViewById(R.id.process_image);
+        process_imageBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
                 Log.i(TAG, "onClick...");
@@ -67,20 +89,20 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         ImagePro img=new ImagePro();
                         long T0 = System.currentTimeMillis();
-                        Bitmap bitImage1 =img.ImageProcess1(bmp);//通过整型数组传递图像数据
+                        Bitmap bitImage1 =img.ImageProcess1(src_bitmap);//通过整型数组传递图像数据
                         long T1 = System.currentTimeMillis();
-                        Bitmap bitImage2 =img.ImageProcess2(bmp);//通过自定义图像对象传递图像数据
+                        Bitmap bitImage2 =img.ImageProcess2(src_bitmap);//通过自定义图像对象传递图像数据
                         long T2 = System.currentTimeMillis();
-                        Bitmap bitImage3 =img.ImageProcess3(bmp);//通过OpenCV的getNativeObjAddr()把地址传递给底层JNI
+                        Bitmap bitImage3 =img.ImageProcess3(src_bitmap);//通过OpenCV的getNativeObjAddr()把地址传递给底层JNI
                         long T3 = System.currentTimeMillis();
                         Log.e(TAG, "Run time,ImageProcess1="+(T1-T0)+"ms");
                         Log.e(TAG, "Run time,ImageProcess2="+(T2-T1)+"ms");
                         Log.e(TAG, "Run time,ImageProcess3="+(T3-T2)+"ms");
-                        bitmap =bitImage3;
+                        dest_bitmap =bitImage3;
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                imageview.setImageBitmap(bitmap);
+                                showImage(dest_bitmap);
                             }
                         });
 
@@ -88,6 +110,45 @@ public class MainActivity extends AppCompatActivity {
                 }).start();
             }
         });
+
+        //对比
+        contrast_imageBt= (Button) findViewById(R.id.contrast_image);
+        contrast_imageBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (bSHOW_SRCIMAGE){
+                    showImage(src_bitmap);
+                    bSHOW_SRCIMAGE=false;
+                    contrast_imageBt.setText("原图");
+                }else {
+                    showImage(dest_bitmap);
+                    bSHOW_SRCIMAGE=true;
+                    contrast_imageBt.setText("效果图");
+                }
+            }
+        });
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        //打开相册，获取图片路径
+        if (requestCode == IMAGE && resultCode == Activity.RESULT_OK && data != null) {
+            Uri selectedImage = data.getData();
+            String[] filePathColumns = {MediaStore.Images.Media.DATA};
+            Cursor c = getContentResolver().query(selectedImage, filePathColumns, null, null, null);
+            c.moveToFirst();
+            int columnIndex = c.getColumnIndex(filePathColumns[0]);
+            String imagePath = c.getString(columnIndex);
+            src_bitmap = BitmapFactory.decodeFile(imagePath);
+            showImage(src_bitmap);
+            c.close();
+        }
+    }
+    //显示图片
+    private void showImage(Bitmap bitmap){
+        imageview.setImageBitmap(bitmap);
     }
 
     /**
@@ -109,9 +170,4 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_EXTERNAL_STORAGE);
         }
     }
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
 }
