@@ -23,6 +23,7 @@ import android.widget.TextView;
 import com.panjq.opencv.alg.ImagePro;
 
 import java.io.File;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     //调用系统相册-选择图片
@@ -62,7 +63,12 @@ public class MainActivity extends AppCompatActivity {
 
 
         imageview = (ImageView) findViewById(R.id.image_view);
-        src_bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.girl);
+        //src_bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.girl);
+        try {
+            src_bitmap = BitmapFactory.decodeStream(getAssets().open("test.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         imageview.setImageBitmap(src_bitmap);
 
         //打开相册
