@@ -1,9 +1,15 @@
 package com.panjq.opencv.alg;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
+import com.panjq.opencv.opencvdemo.LogUtil;
+
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -16,6 +22,7 @@ import org.opencv.android.Utils;
  */
 
 public class ImagePro {
+    private Context context;
     private static final String    TAG = "ImagePro:";
     static {
        // System.loadLibrary("imagePro-lib");
@@ -24,6 +31,9 @@ public class ImagePro {
     public native int[] jniImagePro1(int[] pixels, int w, int h);
     public native ImageData jniImagePro2(ImageData image_data);
     public native void jniImagePro3(long matAddrSrcImage, long matAddrDestImage);
+    public ImagePro(Context context){
+        this.context = context;
+    }
     /**
      *
      */
@@ -77,29 +87,31 @@ public class ImagePro {
     }
 
 
+    //图片保存
+    public void saveBitmap(Bitmap b){
+//        String path = Environment.getExternalStorageDirectory().getAbsolutePath()+"/3DLUT/";
+        String path =Environment.getExternalStorageDirectory().getPath()+"/DCIM/3DLUT/";
 
-    public static void saveImage(Bitmap bmp,String name) {
-        File appDir = new File(Environment.getExternalStorageDirectory(), "OpencvDemo");
-        if (!appDir.exists()) {
-            appDir.mkdir();
+        File folder=new File(path);
+        if(!folder.exists()&&!folder.mkdirs()){
+            LogUtil.e("无法保存图片");
+            return;
         }
-        String fileName = name;
-        File file = new File(appDir, fileName);
-//        if (file.exists()) {
-//            file.delete();
-//        }
+        long dataTake = System.currentTimeMillis();
+        final String jpegName=path+ dataTake +".jpg";
+        LogUtil.e("jpegName = "+jpegName);
         try {
-            FileOutputStream fos = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-            fos.flush();
-            fos.close();
-            Log.e(TAG, "图片保存成功...");
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "图片保存失败...");
-            e.printStackTrace();
+            FileOutputStream fout = new FileOutputStream(jpegName);
+            BufferedOutputStream bos = new BufferedOutputStream(fout);
+            b.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+            bos.flush();
+            bos.close();
         } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        // 最后通知图库更新
+        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + jpegName)));
     }
 
 }

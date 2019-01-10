@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        ImagePro img=new ImagePro();
+                        ImagePro img=new ImagePro(MainActivity.this);
                         long T0 = System.currentTimeMillis();
                         Bitmap bitImage1 =img.ImageProcess1(src_bitmap);//通过整型数组传递图像数据
                         long T1 = System.currentTimeMillis();
