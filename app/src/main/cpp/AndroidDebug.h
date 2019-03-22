@@ -1,25 +1,57 @@
-//
-// Created by panjq1 on 2017/11/1.
-//
+#ifndef DETECT_DEBUG_H
+#define DETECT_DEBUG_H
+#include "opencv2/opencv.hpp"
+#include <chrono>
 
-#ifndef OPENCV_ANDROID_DEMO_ANDROIDDEBUG_H
-#define OPENCV_ANDROID_DEMO_ANDROIDDEBUG_H
+#define  millisecond 1000000.0
+
+using namespace std;
 //debug info ON-OFF
 #define __DEBUG__ON
 #ifdef  __DEBUG__ON
+#define __DEBUG__WIN__OFF         //Window debug:print debug info
+#define __DEBUG__IMSHOW__ON       //show debug images
+#define __DEBUG__IMWRITE__OFF       //write debug images
 #define __DEBUG__TIME__ON          //run times test on/off
-#define __DEBUG__ANDROID__ON      //android debug on/off
+#define __DEBUG__ANDROID__ON     //android debug on/off
+
+//#include <assert.h>
+//#define DEBUG_ASSERT(...) assert( __VA_ARGS__)
+//#define DEBUG_CV_ASSERT(...) CV_Assert( __VA_ARGS__)
+
 #else
 #define __DEBUG__ON(format,...)
 #endif
 
+//print debug info
+#ifdef  __DEBUG__WIN__ON
+//#define DEBUG_PRINT(...) printf("File: %s, Line: %05d: "format"", __FILE__,__LINE__, ##__VA_ARGS__)
+#define DEBUG_PRINT(...) printf( __VA_ARGS__);printf("\n")
+#else
+#define DEBUG_PRINT(format,...)
+#endif
 
 
-//android debug ON/OFF
+
+//show debug images
+#ifdef  __DEBUG__IMSHOW__ON
+#define DEBUG_IMSHOW(...) showImages(__VA_ARGS__)
+#else
+#define DEBUG_IMSHOW(format,...)
+#endif
+
+//write debug images
+#ifdef  __DEBUG__IMWRITE__ON
+#define DEBUG_IMWRITE(...) saveImage(__VA_ARGS__)
+#else
+#define DEBUG_IMWRITE(format,...)
+#endif
+
+//write debug images
 #ifdef  __DEBUG__ANDROID__ON
 #include <android/log.h>
 // Define the LOGI and others for print debug infomation like the log.i in java
-//#define LOG_TAG    "Opencv-Demo -- JNILOG"
+#define LOG_TAG    "SmartAlbum -- JNILOG"
 //#undef LOG
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG, __VA_ARGS__)
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG, __VA_ARGS__)
@@ -27,118 +59,72 @@
 #define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG, __VA_ARGS__)
 #define LOGF(...)  __android_log_print(ANDROID_LOG_FATAL,LOG_TAG, __VA_ARGS__)
 #else
-#define ANDROID_LOG_TAG(format,...)
+#ifdef __DEBUG__WIN__ON
+#define LOGI(...)  printf( __VA_ARGS__); printf("\n")
+#define LOGD(...)  printf( __VA_ARGS__); printf("\n")
+#define LOGW(...)  printf( __VA_ARGS__); printf("\n")
+#define LOGE(...)  printf( __VA_ARGS__); printf("\n")
+#define LOGF(...)  printf( __VA_ARGS__); printf("\n")
+#else
+#define LOGI(...)
+#define LOGD(...)
+#define LOGW(...)
+#define LOGE(...)
+#define LOGF(...)
 #endif
-
-
-
+#endif
 
 //run times test...
 #ifdef  __DEBUG__TIME__ON
-#include<time.h>
-#define TIME0 TIME0
-#define TIME1 TIME1
-#define TIME2 TIME2
-#define TIME3 TIME3
-#define TIME4 TIME4
-#define TIME5 TIME5
-#define TIME6 TIME6
-#define TIME7 TIME7
-#define TIME8 TIME8
-#define TIME9 TIME9
-static clock_t TIME0;
-static clock_t TIME1;
-static clock_t TIME2;
-static clock_t TIME3;
-static clock_t TIME4;
-static clock_t TIME5;
-static clock_t TIME6;
-static clock_t TIME7;
-static clock_t TIME8;
-static clock_t TIME9;
-#define DEBUG__TIME0 (TIME0= clock())
-#define DEBUG__TIME1 (TIME1= clock())
-#define DEBUG__TIME2 (TIME2= clock())
-#define DEBUG__TIME3 (TIME3= clock())
-#define DEBUG__TIME4 (TIME4= clock())
-#define DEBUG__TIME5 (TIME5= clock())
-#define DEBUG__TIME6 (TIME6= clock())
-#define DEBUG__TIME7 (TIME7= clock())
-#define DEBUG__TIME8 (TIME8= clock())
-#define DEBUG__TIME9 (TIME9= clock())
+#define LOG_TIME  LOGE
+#define RUN_TIME(time_)  (double)(time_).count()/millisecond
+//#define RUN_TIME(...)  getTime_MS( __VA_ARGS__)
 
-#define GTIME0 GTIME0
-#define GTIME1 GTIME1
-#define GTIME2 GTIME2
-#define GTIME3 GTIME3
-#define GTIME4 GTIME4
-#define GTIME5 GTIME5
-#define GTIME6 GTIME6
-#define GTIME7 GTIME7
-#define GTIME8 GTIME8
-#define GTIME9 GTIME9
-extern clock_t GTIME0;
-extern clock_t GTIME1;
-extern clock_t GTIME2;
-extern clock_t GTIME3;
-extern clock_t GTIME4;
-extern clock_t GTIME5;
-extern clock_t GTIME6;
-extern clock_t GTIME7;
-extern clock_t GTIME8;
-extern clock_t GTIME9;
-#define DEBUG__GTIME0 (GTIME0= clock())
-#define DEBUG__GTIME1 (GTIME1= clock())
-#define DEBUG__GTIME2 (GTIME2= clock())
-#define DEBUG__GTIME3 (GTIME3= clock())
-#define DEBUG__GTIME4 (GTIME4= clock())
-#define DEBUG__GTIME5 (GTIME5= clock())
-#define DEBUG__GTIME6 (GTIME6= clock())
-#define DEBUG__GTIME7 (GTIME7= clock())
-#define DEBUG__GTIME8 (GTIME8= clock())
-#define DEBUG__GTIME9 (GTIME9= clock())
+//设置计算运行时间的宏定义
+#define DEBUG_TIME(time_) auto time_ =std::chrono::high_resolution_clock::now()
+#define DEBUG_TIME_PRINT(time_) printf("run time: %s=%3.3f ms\n", #time_,(double)(time_).count()/millisecond)
 #else
-#define TIME0 0
-#define TIME1 0
-#define TIME2 0
-#define TIME3 0
-#define TIME4 0
-#define TIME5 0
-#define TIME6 0
-#define TIME7 0
-#define TIME8 0
-#define TIME9 0
-#define DEBUG__TIME0
-#define DEBUG__TIME1
-#define DEBUG__TIME2
-#define DEBUG__TIME3
-#define DEBUG__TIME4
-#define DEBUG__TIME5
-#define DEBUG__TIME6
-#define DEBUG__TIME7
-#define DEBUG__TIME8
-#define DEBUG__TIME9
-
-#define GTIME0 0
-#define GTIME1 0
-#define GTIME2 0
-#define GTIME3 0
-#define GTIME4 0
-#define GTIME5 0
-#define GTIME6 0
-#define GTIME7 0
-#define GTIME8 0
-#define GTIME9 0
-#define DEBUG__GTIME0
-#define DEBUG__GTIME1
-#define DEBUG__GTIME2
-#define DEBUG__GTIME3
-#define DEBUG__GTIME4
-#define DEBUG__GTIME5
-#define DEBUG__GTIME6
-#define DEBUG__GTIME7
-#define DEBUG__GTIME8
-#define DEBUG__GTIME9
+#define DEBUG_TIME(time_)
 #endif
 
-#endif //OPENCV_ANDROID_DEMO_ANDROIDDEBUG_H
+template<typename TYPE>
+void PRINT_1D(string name,TYPE *p1, int len) {
+    printf("%s", name.c_str());
+    for (int i = 0; i < len; i++) {
+        printf("%f,", p1[i]);
+    }
+    cout << endl;
+}
+
+
+void showImages(const char *imageName, cv::Mat image);
+void showImages(const char *imageName, cv::Mat img, cv::Rect face);
+void showImages(const char *imageName, cv::Mat img, cv::Rect face, std::vector<cv::Point> pts);
+void showImages(const char *imageName, cv::Mat img, std::vector<cv::Point> pts);
+
+
+
+
+void saveImage(const char *imageName, cv::Mat image);
+void saveImage(const char *imageName, cv::Mat image, std::vector<int> para);
+void saveImage(const char *imageName, cv::Mat image, cv::Rect face, std::vector<cv::Point> pts);
+void saveImage(const char *imageName, cv::Mat img, cv::Rect face);
+
+vector<string> getFilesList(string dir);
+void writeDatatxt(string path, string data, bool bCover=false);
+
+#ifdef linux
+
+#define _LINUX
+#define separator "/"
+
+#endif
+
+#ifdef _WIN32//__WINDOWS_
+
+#define _WINDOWS
+#define separator  "\\"
+#endif
+
+
+#endif

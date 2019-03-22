@@ -13,7 +13,7 @@ using namespace cv;
 extern "C"
 JNIEXPORT jintArray  JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro1
         (JNIEnv *env, jobject obj, jintArray buf, jint w , jint h){
-    DEBUG__TIME0;
+    DEBUG_TIME(T0);
     //读取int数组并转为Mat类型
     jint *cbuf = env->GetIntArrayElements(buf,JNI_FALSE);
     if (NULL == cbuf)
@@ -38,8 +38,8 @@ JNIEXPORT jintArray  JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro1
     env->SetIntArrayRegion(result, 0, size, (const jint *) ptr);
     env->ReleaseIntArrayElements(buf, cbuf, 0);
     LOGE("jniImagePro1: called JNI end...image size=[%d,%d]",imgData.cols,imgData.rows);
-    DEBUG__TIME1;
-    LOGE("Run time:jniImagePro1=%dms\n",(TIME1-TIME0)/1000);
+    DEBUG_TIME(T1);
+    LOGE("Run time:jniImagePro1=%3.3fms\n",(T1-T0));
     return result;
 }
 
@@ -47,7 +47,7 @@ JNIEXPORT jintArray  JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro1
 extern "C"
 JNIEXPORT jobject JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro2
         (JNIEnv *env, jobject obj, jobject image_obj){
-    DEBUG__TIME0;
+    DEBUG_TIME(T0);
     //获取Java中的实例类
     // jclass jcInfo = env->FindClass("com/panjq/opencv/alg/ImageData");
     jclass jcInfo = env->GetObjectClass(image_obj);
@@ -97,22 +97,23 @@ JNIEXPORT jobject JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro2
     env->SetIntField(obj_result, jf_w, w);
     env->SetIntField(obj_result, jf_h, h);
     env->ReleaseIntArrayElements(resultPixel, ptr_resultPixel, 0);
-    DEBUG__TIME1;
-    LOGE("Run time:jniImagePro2=%dms\n",(TIME1-TIME0)/1000);
+    DEBUG_TIME(T1);
+    LOGE("Run time:jniImagePro2=%3.3fms\n",(T1-T0));
     return  obj_result;
 }
 
 extern "C"
 JNIEXPORT void JNICALL Java_com_panjq_opencv_alg_ImagePro_jniImagePro3
         (JNIEnv *, jobject, jlong matAddrSrcImage, jlong matAddrDestImage){
-    DEBUG__TIME0;
-    Mat& srcImage  = *(Mat*)matAddrSrcImage;
+    DEBUG_TIME(T0);
+    Mat& srcImage  = *(Mat*)matAddrSrcImage;//java层会将bitmap转为RGBA格式
     Mat& destImage = *(Mat*)matAddrDestImage;
+    //cv::imwrite("/storage/emulated/0/standard-001.jpg",srcImage);//保存图片
     //blur(imgData,imgData,Size(20,20));//图像模糊
-    cv::cvtColor(srcImage,srcImage,CV_BGRA2BGR);
+    cv::cvtColor(srcImage,srcImage,CV_RGBA2BGR);
     blur(srcImage,destImage,Size(20,20));
-    cv::cvtColor(destImage,destImage,CV_BGR2BGRA);
-    DEBUG__TIME1;
-    LOGE("Run time:jniImagePro3=%dms\n",(TIME1-TIME0)/1000);
+    cv::cvtColor(destImage,destImage,CV_BGR2RGBA);
+    DEBUG_TIME(T1);
+    LOGE("Run time:jniImagePro3=%3.3fms\n",(T1-T0));
     LOGE("jniImagePro3: ouput image size=[%d,%d],channels=%d\n",destImage.rows,destImage.cols,destImage.channels());
 }
